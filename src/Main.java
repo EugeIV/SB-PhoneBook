@@ -8,6 +8,8 @@ public class Main
     private static TreeMap<String, String> phoneBook = new TreeMap<>();
     private static final String REGEX_NUM = "^\\+?[78][-\\(]?\\d{3}\\)?-?\\d{3}-?\\d{2}-?\\d{2}$";
     private static final String REGEX_NAME = "[A-Za-zА-Яа-яЁё]+(\\s+[A-Za-zА-Яа-яЁё]+)?";
+    private static final String REGEX_CORRECT_NUM = "[^0-9\\+]";
+    private static boolean correct = true;
 
     public static void main(String[] args)
     {
@@ -47,23 +49,17 @@ public class Main
         else
         {
             System.out.print("Контакт не найден. Добавьте его номер: ");
-            String phoneNumber = scanner.nextLine();
-            if (phoneNumber.matches(REGEX_NUM))
+            while (correct)
             {
-                String pN = phoneNumber.replaceAll("[^0-9\\+]", ""); //приводим к единому формату для БД
-                phoneBook.put(nextStr, correctEntry(pN));
-                System.out.println("Контакт добавлен");
-            }
-            else
-            {
-                System.out.println("Проверьте правильность телефонного номера");
+                String phoneNumber = scanner.nextLine();
+                setInfo(nextStr, phoneNumber);
             }
         }
     }
 
     private static void searchNum(Map<String, String> map, String phoneNumber) // проверяем наличие номере в базе, если нет, то вводим Имя и сохраняем
     {
-        String pN = phoneNumber.replaceAll("[^0-9\\+]", "");
+        String pN = phoneNumber.replaceAll(REGEX_CORRECT_NUM, "");
         if (pN.length() == 11)
         {
             pN = pN.substring(1);
@@ -143,5 +139,20 @@ public class Main
             return "Проверьте правильность телефонного номера";
         }
         return "";
+    }
+
+    private static void setInfo(String name, String phoneNumber)
+    {
+        if (phoneNumber.matches(REGEX_NUM))
+        {
+            correct = false;
+            String pN = phoneNumber.replaceAll(REGEX_CORRECT_NUM, ""); //приводим к единому формату для БД
+            phoneBook.put(name, correctEntry(pN));
+            System.out.println("Контакт добавлен");
+        }
+        else
+        {
+            System.out.println("Номер некорректен. Введите номер заново: ");
+        }
     }
 }
