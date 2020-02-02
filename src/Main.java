@@ -1,3 +1,4 @@
+import java.security.KeyStore;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -9,7 +10,6 @@ public class Main
     private static final String REGEX_NUM = "^\\+?[78][-\\(]?\\d{3}\\)?-?\\d{3}-?\\d{2}-?\\d{2}$";
     private static final String REGEX_NAME = "[A-Za-zА-Яа-яЁё]+(\\s+[A-Za-zА-Яа-яЁё]+)?";
     private static final String REGEX_CORRECT_NUM = "[^0-9\\+]";
-    private static boolean correct = true;
 
     public static void main(String[] args)
     {
@@ -42,37 +42,39 @@ public class Main
 
     private static void searchName(Map<String, String> phoneBook, String nextStr) // ищем номер по имени, если нет - добавляем
     {
-        if (phoneBook.containsKey(nextStr))
+        if (phoneBook.containsKey(nextStr.toLowerCase()))
         {
             System.out.println(nextStr + " => +7" + phoneBook.get(nextStr));
         }
         else
         {
-            System.out.print("Контакт не найден. Добавьте его номер: ");
-            while (correct)
+            String phoneNumber = requestInput(REGEX_NUM, "Введите номер");
+            String pN = phoneNumber.replaceAll(REGEX_CORRECT_NUM, "");
+            if (numberInBook(phoneBook, correctEntry(pN)))
             {
-                String phoneNumber = scanner.nextLine();
-                setInfo(nextStr, phoneNumber);
+                System.out.println("В базе есть данный номер: " + outputNumber(phoneBook, correctEntry(pN)));
+            }
+            else
+            {
+                phoneBook.put(nextStr, correctEntry(pN));
+                System.out.println("Контакт добавлен");
             }
         }
     }
 
-    private static void searchNum(Map<String, String> map, String phoneNumber) // проверяем наличие номере в базе, если нет, то вводим Имя и сохраняем
+    private static void searchNum(Map<String, String> phoneBook, String phoneNumber) // проверяем наличие номере в базе, если нет, то вводим Имя и сохраняем
     {
         String pN = phoneNumber.replaceAll(REGEX_CORRECT_NUM, "");
-        if (pN.length() == 11)
+        if (numberInBook(phoneBook, correctEntry(pN)))
         {
-            pN = pN.substring(1);
-        }
-        else if (pN.length() == 12)
-        {
-            pN = pN.substring(2);
+            System.out.println("В базе есть данный номер: " + outputNumber(phoneBook, correctEntry(pN)));
         }
         else
         {
-            System.out.println("Проверьте правильность телефонного номера");
+            String name = requestInput(REGEX_NAME, "Введите имя");
+            phoneBook.put(name, correctEntry(pN));
+            System.out.println("Контакт добавлен");
         }
-        System.out.println(getNameFromNumber(map, pN));
     }
 
     private static void printMap(Map<String, String> map) // вывод всей телефонной книги
@@ -81,21 +83,6 @@ public class Main
         {
             System.out.println(key + " => +7" + map.get(key));
         }
-    }
-
-    private static String getNameFromNumber(Map<String, String> map, String phoneNumber) // исключаем дублирование номеров
-    {
-        for (String name : map.keySet())
-        {
-            if (map.get(name).equals(phoneNumber))
-            {
-                return name + " => +7" + phoneNumber;
-            }
-        }
-        System.out.print("В базе нет такого номера. Введите имя, чтобы добавить: ");
-        String name = scanner.nextLine();
-        phoneBook.put(name, phoneNumber);
-        return "Контакт добавлен";
     }
 
     private static Boolean numberInBook(Map<String, String> map, String phoneNumber) // наличие номера в базе
@@ -114,45 +101,38 @@ public class Main
     {
         if (phoneNumber.length() == 11)
         {
-            if (numberInBook(phoneBook, phoneNumber.substring(1)))
-            {
-                System.out.println("В базе есть такой номер: " + getNameFromNumber(phoneBook, phoneNumber.substring(1)));
-            }
-            else
-            {
-                return phoneNumber.substring(1);
-            }
+            return phoneNumber.substring(1);
         }
+
         else if (phoneNumber.length() == 12)
         {
-            if (numberInBook(phoneBook, phoneNumber.substring(2)))
-            {
-                System.out.println("В базе есть такой номер: " + getNameFromNumber(phoneBook, phoneNumber.substring(2)));
-            }
-            else
-            {
-                return phoneNumber.substring(2);
-            }
+            return phoneNumber.substring(2);
         }
         else
         {
             return "Проверьте правильность телефонного номера";
         }
-        return "";
     }
 
-    private static void setInfo(String name, String phoneNumber)
+    private static String requestInput(String regex, String invitation) // общий метод ввода имя/номер
     {
-        if (phoneNumber.matches(REGEX_NUM))
-        {
-            correct = false;
-            String pN = phoneNumber.replaceAll(REGEX_CORRECT_NUM, ""); //приводим к единому формату для БД
-            phoneBook.put(name, correctEntry(pN));
-            System.out.println("Контакт добавлен");
+        String input = "";
+        while (!input.matches(regex)) {
+            System.out.println(invitation);
+            input = new Scanner(System.in).nextLine();
         }
-        else
+        return input;
+    }
+
+    private static String outputNumber(Map<String, String> phoneBook, String phoneNumber) // метод вывода имя => номер из базы
+    {
+        for (String name : phoneBook.keySet())
         {
-            System.out.println("Номер некорректен. Введите номер заново: ");
+            if (phoneBook.get(name).equals(phoneNumber))
+            {
+                return name + " => +7" + phoneNumber;
+            }
         }
+        return "";
     }
 }
